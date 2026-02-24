@@ -15,7 +15,7 @@ export function Login() {
     const [errorMsg, setErrorMsg] = useState('');
     const navigate = useNavigate();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
+    const { register, handleSubmit } = useForm<LoginForm>();
 
     const onSubmit = async (data: LoginForm) => {
         setLoading(true);
@@ -43,7 +43,7 @@ export function Login() {
                         <Lock className="w-10 h-10" />
                     </div>
                     <h2 className="text-center text-3xl font-extrabold text-slate-900 tracking-tight">
-                        Vox Contador
+                        VoxCount
                     </h2>
                     <p className="mt-2 text-center text-sm text-slate-500 font-medium">
                         Gerenciamento Premium para MEIs
@@ -71,7 +71,7 @@ export function Login() {
                                 <input
                                     type="email"
                                     {...register('email', { required: true })}
-                                    className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition transition-shadow text-slate-900"
+                                    className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-slate-900"
                                     placeholder="contador@vox.com.br"
                                 />
                             </div>
@@ -88,7 +88,7 @@ export function Login() {
                                 <input
                                     type="password"
                                     {...register('pass', { required: true })}
-                                    className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition transition-shadow text-slate-900"
+                                    className="w-full pl-10 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-slate-900"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -127,8 +127,8 @@ export function Login() {
 
             {/* Decorative Blob */}
             <div className="fixed top-0 max-w-7xl mx-auto inset-x-0 h-full w-full overflow-hidden pointer-events-none z-0">
-                <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-br from-blue-300/30 to-indigo-100/10 blur-3xl rounded-full"></div>
-                <div className="absolute -bottom-1/2 -left-1/2 w-[80%] h-[80%] bg-gradient-to-tr from-slate-200/50 to-emerald-50/10 blur-3xl rounded-full"></div>
+                <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-linear-to-br from-blue-300/30 to-indigo-100/10 blur-3xl rounded-full"></div>
+                <div className="absolute -bottom-1/2 -left-1/2 w-[80%] h-[80%] bg-linear-to-tr from-slate-200/50 to-emerald-50/10 blur-3xl rounded-full"></div>
             </div>
         </div>
     );

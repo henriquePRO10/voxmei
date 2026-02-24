@@ -90,6 +90,8 @@ app.whenReady().then(() => {
       if (canceled || !filePath) return { success: false, canceled: true };
 
       fs.writeFileSync(filePath, Buffer.from(buffer));
+      // Abre o PDF no navegador padrão do sistema
+      shell.openExternal(`file://${filePath}`);
       return { success: true, filePath };
     } catch (error: any) {
       console.error('Erro ao salvar PDF:', error.message);

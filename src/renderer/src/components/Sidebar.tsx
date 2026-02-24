@@ -1,6 +1,5 @@
-import { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Users, DollarSign, FileText, FileBadge } from 'lucide-react';
+import { Users, DollarSign, FileText, FileBadge, BarChart2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -14,12 +13,13 @@ export function Sidebar() {
         { label: 'Financeiro', path: '/financeiro', icon: DollarSign },
         { label: 'Pró-Labore', path: '/pro-labore', icon: FileText },
         { label: 'Holerite', path: '/holerite', icon: FileBadge },
+        { label: 'Relatórios', path: '/relatorios', icon: BarChart2 },
     ];
 
     return (
         <aside className="w-64 h-screen fixed left-0 top-0 bg-slate-900 text-slate-300 flex flex-col shadow-xl z-20">
             <div className="h-16 flex items-center px-6 bg-slate-950 font-bold text-xl text-white tracking-wide border-b border-slate-800">
-                Vox Contador
+                VoxCount
             </div>
             <nav className="flex-1 py-6 px-3 space-y-2 overflow-y-auto">
                 {routes.map((route) => (

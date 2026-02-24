@@ -6,5 +6,8 @@ service firebase.storage {
     match /notas_fiscais/{userId}/{fileName=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+    match /assinaturas/{userId}/{fileName=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }

@@ -43,9 +43,11 @@ export function Clientes() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isFetchingCnpj, setIsFetchingCnpj] = useState(false);
     const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; cliente: Cliente } | null>(null);
+    const [confirmDelete, setConfirmDelete] = useState<Cliente | null>(null);
     const { currentUser } = useAuth();
 
-    const { register, handleSubmit, setValue, getValues, reset, formState: { errors } } = useRHForm<FormValues>({
+    const { register, handleSubmit, setValue, getValues, reset } = useRHForm<FormValues>({
         defaultValues: { status: 'Ativo' }
     });
 
@@ -66,6 +68,12 @@ export function Clientes() {
     useEffect(() => {
         fetchClientes();
     }, [currentUser]);
+
+    useEffect(() => {
+        const close = () => setContextMenu(null);
+        document.addEventListener('click', close);
+        return () => document.removeEventListener('click', close);
+    }, []);
 
     const handleFetchCnpj = async () => {
         const cnpj = getValues('cnpj');
@@ -112,7 +120,8 @@ export function Clientes() {
         try {
             if (editingCliente) {
                 await updateDoc(doc(db, 'clientes', editingCliente.id), {
-                    ...data
+                    ...data,
+                    userId: currentUser.uid
                 });
             } else {
                 await addDoc(collection(db, 'clientes'), {
@@ -148,10 +157,14 @@ export function Clientes() {
         setIsModalOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm("Tem certeza que deseja remover este cliente?")) {
-            await deleteDoc(doc(db, 'clientes', id));
+    const handleDelete = async () => {
+        if (!confirmDelete) return;
+        try {
+            await deleteDoc(doc(db, 'clientes', confirmDelete.id));
+            setConfirmDelete(null);
             fetchClientes();
+        } catch (e) {
+            console.error(e);
         }
     };
 
@@ -213,7 +226,7 @@ export function Clientes() {
                                 </tr>
                             ) : null}
                             {clientes.map((cliente) => (
-                                <tr key={cliente.id} className="hover:bg-slate-50/80 transition-colors group">
+                                <tr key={cliente.id} className="hover:bg-slate-50/80 transition-colors group select-none" onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, cliente }); }}>
                                     <td className="px-6 py-4">
                                         <div className="font-semibold text-slate-900">{cliente.nomeFantasia}</div>
                                         <div className="text-xs text-slate-500 mt-0.5">{cliente.razaoSocial}</div>
@@ -242,7 +255,7 @@ export function Clientes() {
                                         <button onClick={() => handleEdit(cliente)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Editar Cliente">
                                             <Edit2 className="w-4 h-4" />
                                         </button>
-                                        <button onClick={() => handleDelete(cliente.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="Excluir Cliente">
+                                        <button onClick={() => setConfirmDelete(cliente)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="Excluir Cliente">
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </td>
@@ -336,7 +349,7 @@ export function Clientes() {
                                     <label className="flex items-center gap-3 cursor-pointer py-3">
                                         <div className="relative flex items-center">
                                             <input type="checkbox" {...register('optanteSimples')} className="peer sr-only" />
-                                            <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                                            <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-blue-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
                                         </div>
                                         <span className="text-sm font-medium text-slate-700">Optante Simples</span>
                                     </label>
@@ -405,6 +418,48 @@ export function Clientes() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Context Menu */}
+            {contextMenu && (
+                <div
+                    className="fixed z-60 bg-white rounded-xl shadow-xl border border-slate-100 py-1 min-w-40 animate-in zoom-in-95 duration-150"
+                    style={{ top: contextMenu.y, left: contextMenu.x }}
+                    onClick={e => e.stopPropagation()}
+                >
+                    <button
+                        onClick={() => { handleEdit(contextMenu.cliente); setContextMenu(null); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                        <Edit2 className="w-4 h-4 text-slate-400" /> Editar cliente
+                    </button>
+                    <div className="h-px bg-slate-100 mx-2" />
+                    <button
+                        onClick={() => { setConfirmDelete(contextMenu.cliente); setContextMenu(null); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    >
+                        <Trash2 className="w-4 h-4" /> Excluir cliente
+                    </button>
+                </div>
+            )}
+
+            {/* Confirm Delete */}
+            {confirmDelete && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2.5 bg-rose-50 rounded-xl text-rose-600"><Trash2 className="w-5 h-5" /></div>
+                            <h3 className="font-semibold text-slate-800">Excluir cliente?</h3>
+                        </div>
+                        <p className="text-sm text-slate-500 ml-13">
+                            "<span className="font-medium text-slate-700">{confirmDelete.nomeFantasia}</span>" será removido permanentemente.
+                        </p>
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer">Cancelar</button>
+                            <button onClick={handleDelete} className="px-5 py-2 text-sm font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm shadow-rose-500/30 transition cursor-pointer">Excluir</button>
+                        </div>
                     </div>
                 </div>
             )}

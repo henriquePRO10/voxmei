@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileBadge, Download, Search } from 'lucide-react';
-import { collection, getDocs, query, orderBy, where, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { PDFDocument } from 'pdf-lib';
 import { format } from 'date-fns';
@@ -53,7 +53,7 @@ export function Holerite() {
         try {
             // Tenta ler o PDF Template armazenado na pasta public ou assets.
             // Em Vite, arquivos estáticos globais ficam na pasta public/.
-            let pdfBytes: ArrayBuffer;
+            let pdfBytes: ArrayBuffer | Uint8Array;
             try {
                 const url = new URL('../assets/holerite-template.pdf', import.meta.url).href;
                 const res = await fetch(url);
@@ -83,7 +83,7 @@ export function Holerite() {
             // pdfBytes = await pdfDoc.save();
 
             // Convertendo ArrayBuffer para Uint8Array para cruzar a ponte IPC Segura
-            const uint8Array = new Uint8Array(pdfBytes);
+            const uint8Array = pdfBytes instanceof Uint8Array ? pdfBytes : new Uint8Array(pdfBytes);
 
             const fileName = `Holerite_${item.nomeFantasia.replace(/[^a-z0-9]/gi, '_')}_${item.mesAno.replace('/', '-')}.pdf`;
 
