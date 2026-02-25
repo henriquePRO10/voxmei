@@ -1,5 +1,6 @@
 appId: com.voxcount.app
 productName: VoxCount
+icon: build/icon
 directories:
   buildResources: build
 files:
