@@ -39,12 +39,16 @@ $ pnpm run build:linux
 A helper script makes it easy to publish a new version. Usage:
 
 1. Bump the `version` field in `package.json` (e.g. `"1.0.0"` → `"1.0.1"`).
-2. Ensure `GH_TOKEN` is set in your `.env` (or in CI environment).
+2. Ensure `GH_TOKEN` is set in your `.env` file. The `dotenv-cli` package will automatically load it during the build process.
 3. Run the release command:
 
 ```bash
 $ pnpm run release
 ```
+
+**Importante (Windows):** O processo de build do `electron-builder` precisa criar links simbólicos. Para que o comando `pnpm run release` funcione corretamente no Windows, você deve:
+- Executar o terminal (ou o VS Code) como **Administrador**.
+- Ou ativar o **"Modo de Desenvolvedor"** nas configurações do Windows.
 
 The script will:
 
