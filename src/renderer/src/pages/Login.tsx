@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { LogIn, Lock, Mail, Loader2 } from 'lucide-react';
 import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 
 interface LoginForm {
@@ -14,7 +13,6 @@ interface LoginForm {
 export function Login() {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
-    const navigate = useNavigate();
 
     const { register, handleSubmit } = useForm<LoginForm>();
 
