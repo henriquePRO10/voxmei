@@ -36,6 +36,7 @@ export function Header() {
     const [salvouOk, setSalvouOk] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [perfilNome, setPerfilNome] = useState('');
+    const [perfilData, setPerfilData] = useState<ContadorPerfil | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +48,8 @@ export function Header() {
             const snap = await getDocs(q);
             if (!snap.empty) {
                 const data = snap.docs[0].data() as ContadorPerfil;
+                setPerfilData(data);
+                setPerfilDocId(snap.docs[0].id);
                 if (data.nomeCompleto) setPerfilNome(data.nomeCompleto);
             }
         };
@@ -67,16 +70,12 @@ export function Header() {
     const handleOpenPerfil = async () => {
         setShowUserMenu(false);
         if (!currentUser) return;
-        // Busca perfil existente
-        const q = query(collection(db, 'contador_perfil'), where('userId', '==', currentUser.uid));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-            const docData = snap.docs[0].data() as ContadorPerfil;
-            setPerfilDocId(snap.docs[0].id);
-            setNomeCompleto(docData.nomeCompleto || '');
-            setCrc(docData.crc || '');
-            setAssinaturaUrl(docData.assinaturaUrl || '');
-            setAssinaturaPreview(docData.assinaturaUrl || null);
+        
+        if (perfilData) {
+            setNomeCompleto(perfilData.nomeCompleto || '');
+            setCrc(perfilData.crc || '');
+            setAssinaturaUrl(perfilData.assinaturaUrl || '');
+            setAssinaturaPreview(perfilData.assinaturaUrl || null);
         } else {
             setPerfilDocId(null);
             setNomeCompleto('');

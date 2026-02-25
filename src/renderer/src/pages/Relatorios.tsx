@@ -82,7 +82,11 @@ export function Relatorios() {
     useEffect(() => {
         if (!currentUser) return;
         const fetchClientes = async () => {
-            const q = query(collection(db, 'clientes'), where('userId', '==', currentUser.uid));
+            const q = query(
+                collection(db, 'clientes'),
+                where('userId', '==', currentUser.uid),
+                where('status', '==', 'Ativo')
+            );
             const snap = await getDocs(q);
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Cliente[];
             data.sort((a, b) => a.nomeFantasia.localeCompare(b.nomeFantasia));

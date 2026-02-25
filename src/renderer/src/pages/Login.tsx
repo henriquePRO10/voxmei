@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LogIn, Lock, Mail, Loader2 } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 interface LoginForm {
     email: string;
     pass: string;
+    rememberMe: boolean;
 }
 
 export function Login() {
@@ -21,9 +22,12 @@ export function Login() {
         setLoading(true);
         setErrorMsg('');
         try {
+            // Define a persistência com base no checkbox
+            const persistenceType = data.rememberMe ? browserLocalPersistence : browserSessionPersistence;
+            await setPersistence(auth, persistenceType);
+            
             await signInWithEmailAndPassword(auth, data.email, data.pass);
             // O listener do AuthContext capturará e navegará via regras de rotas Privadas
-            navigate('/');
         } catch (error: any) {
             if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
                 setErrorMsg('E-mail ou senha incorretos.');
@@ -98,11 +102,11 @@ export function Login() {
                             <div className="flex items-center">
                                 <input
                                     id="remember-me"
-                                    name="remember-me"
                                     type="checkbox"
+                                    {...register('rememberMe')}
                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                 />
-                                <label className="ml-2 block text-sm text-slate-500">
+                                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-500">
                                     Lembrar acesso
                                 </label>
                             </div>

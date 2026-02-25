@@ -1,11 +1,13 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import axios from 'axios'
 import fs from 'fs'
 import * as dotenv from 'dotenv'
 
+// Carrega as variáveis de ambiente do .env
 dotenv.config()
 
 function createWindow(): void {
@@ -48,6 +50,15 @@ function createWindow(): void {
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.voxcount.app')
+
+  // Configura e inicia o auto-updater
+  autoUpdater.on('update-available', () => {
+    console.log('Atualização disponível.')
+  })
+  autoUpdater.on('update-downloaded', () => {
+    console.log('Atualização baixada. O aplicativo será atualizado ao reiniciar.')
+  })
+  autoUpdater.checkForUpdatesAndNotify()
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

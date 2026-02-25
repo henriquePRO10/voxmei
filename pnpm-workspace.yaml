@@ -1,0 +1,6 @@
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - electron
+  - electron-winstaller
+  - esbuild
+  - protobufjs

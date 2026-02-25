@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2, Building2 } from 'lucide-react';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
-import { useForm as useRHForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Cliente {
@@ -47,7 +47,7 @@ export function Clientes() {
     const [confirmDelete, setConfirmDelete] = useState<Cliente | null>(null);
     const { currentUser } = useAuth();
 
-    const { register, handleSubmit, setValue, getValues, reset } = useRHForm<FormValues>({
+    const { register, handleSubmit, setValue, getValues, reset } = useForm<FormValues>({
         defaultValues: { status: 'Ativo' }
     });
 
@@ -270,7 +270,7 @@ export function Clientes() {
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-slate-800">{editingCliente ? 'Editar Cliente' : 'Detalhes do Cliente'}</h2>
+                            <h2 className="text-xl font-bold text-slate-800">{editingCliente ? 'Editar Cliente' : 'Novo Cliente'}</h2>
                             <button onClick={handleCloseModal} className="text-slate-400 hover:text-slate-600 p-2 bg-slate-100 rounded-full cursor-pointer">
                                 ✕
                             </button>
