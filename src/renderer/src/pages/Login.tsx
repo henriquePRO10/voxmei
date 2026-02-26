@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LogIn, Lock, Mail, Loader2 } from 'lucide-react';
 import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 import { auth } from '../services/firebaseConfig';
 import { useForm } from 'react-hook-form';
 
@@ -26,8 +27,9 @@ export function Login() {
             
             await signInWithEmailAndPassword(auth, data.email, data.pass);
             // O listener do AuthContext capturará e navegará via regras de rotas Privadas
-        } catch (error: any) {
-            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        } catch (error: unknown) {
+            const code = error instanceof FirebaseError ? error.code : '';
+            if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
                 setErrorMsg('E-mail ou senha incorretos.');
             } else {
                 setErrorMsg('Erro de conexão ou sistema. Tente novamente.');

@@ -4,6 +4,7 @@ import { collection, addDoc, getDocs, deleteDoc, doc, query, where, Timestamp, u
 import { db } from '../services/firebaseConfig';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
+import { formatCnpj } from '../lib/utils';
 
 interface Cliente {
     id: string;
@@ -95,7 +96,18 @@ export function Clientes() {
                 if (d.mainActivity) {
                     setValue('atividadePrincipal', `${d.mainActivity.id} - ${d.mainActivity.text}`);
                 }
-                setValue('optanteSimples', d.simples?.optant || false);
+                // marca se api indicar diretamente
+                let optant = d.simples?.optant || false;
+                // fallback: MEI ou natureza jurídica de empresário individual
+                if (!optant) {
+                    const isMei = d.company?.size?.acronym === 'ME';
+                    const isIndividual = d.company?.nature?.id === 2135;
+                    if (isMei || isIndividual) {
+                        optant = true;
+                    }
+                }
+                setValue('optanteSimples', optant);
+
                 if (d.address) {
                     setValue('enderecoCompleto', `${d.address.street}, ${d.address.number}${d.address.details ? ' - ' + d.address.details : ''}, ${d.address.district}, ${d.address.city} - ${d.address.state}, ${d.address.zip}`);
                 }
@@ -118,14 +130,15 @@ export function Clientes() {
     const onSubmit = async (data: FormValues) => {
         if (!currentUser) return;
         try {
+            const payload = { ...data, cnpj: formatCnpj(data.cnpj) };
             if (editingCliente) {
                 await updateDoc(doc(db, 'clientes', editingCliente.id), {
-                    ...data,
+                    ...payload,
                     userId: currentUser.uid
                 });
             } else {
                 await addDoc(collection(db, 'clientes'), {
-                    ...data,
+                    ...payload,
                     userId: currentUser.uid,
                     createdAt: Timestamp.now()
                 });
@@ -291,7 +304,7 @@ export function Clientes() {
                                             type="button"
                                             onClick={handleFetchCnpj}
                                             disabled={isFetchingCnpj}
-                                            className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl transition flex items-center justify-center disabled:opacity-50"
+                                            className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl transition flex items-center justify-center disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                                         >
                                             {isFetchingCnpj ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <Search className="w-5 h-5" />}
                                         </button>

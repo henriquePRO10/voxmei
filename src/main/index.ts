@@ -70,23 +70,59 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  // [1] Busca Segura no CNPJA
+  // [1] Busca Segura no CNPJA (com fallback para token secundário)
   ipcMain.handle('fetch-cnpj', async (_, cnpj: string) => {
-    try {
-      const token = process.env.CNPJA_API_TOKEN;
-      if (!token) throw new Error('API Token do CNPJA ausente no ambiente.');
+    const cleanCnpj = cnpj.replace(/\D/g, '');
+    const url = `https://api.cnpja.com/office/${cleanCnpj}`;
 
-      const cleanCnpj = cnpj.replace(/\D/g, ''); // Garante que foi apenas os números
-      
-      const response = await axios.get(`https://api.cnpja.com/office/${cleanCnpj}`, {
-        headers: { Authorization: token } // Node.js lidando com a segurança 
+    const tryFetch = async (token: string): Promise<{ success: true; data: unknown } | { success: false; error: string }> => {
+      const response = await axios.get(url, {
+        headers: { Authorization: token },
+        validateStatus: () => true // não lança exceção em nenhum status HTTP
       });
 
-      return { success: true, data: response.data };
-    } catch (error: any) {
-      console.error('Erro CNPJA:', error.message);
-      return { success: false, error: error.message || 'Erro desconhecido' };
+      if (response.status >= 200 && response.status < 300) {
+        return { success: true, data: response.data };
+      }
+
+      // Retorna o status para que o caller decida se tenta o fallback
+      return { success: false, error: `HTTP ${response.status}: ${JSON.stringify(response.data)}` };
+    };
+
+    const token1 = process.env.CNPJA_API_TOKEN;
+    const token2 = process.env.CNPJA_API_TOKEN2;
+
+    if (!token1 && !token2) {
+      return { success: false, error: 'Nenhum token da API CNPJA configurado no ambiente.' };
     }
+
+    // Tentativa 1 — token principal
+    if (token1) {
+      try {
+        const result = await tryFetch(token1);
+        if (result.success) return result;
+        console.warn(`[CNPJA] Token principal falhou (${result.error}). Tentando token secundário...`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+        console.warn(`[CNPJA] Token principal lançou exceção: ${msg}. Tentando token secundário...`);
+      }
+    }
+
+    // Tentativa 2 — token de contingência
+    if (token2) {
+      try {
+        const result = await tryFetch(token2);
+        if (result.success) return result;
+        console.error(`[CNPJA] Token secundário também falhou: ${result.error}`);
+        return { success: false, error: 'Ambos os tokens CNPJA falharam. Verifique seus limites de requisição.' };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+        console.error(`[CNPJA] Token secundário lançou exceção: ${msg}`);
+        return { success: false, error: msg };
+      }
+    }
+
+    return { success: false, error: 'Token principal falhou e token secundário não está configurado.' };
   });
 
   // [2] Rotina Segura para Salvar Arquivos no SO
@@ -104,9 +140,10 @@ app.whenReady().then(() => {
       // Abre o PDF no navegador padrão do sistema
       shell.openExternal(`file://${filePath}`);
       return { success: true, filePath };
-    } catch (error: any) {
-      console.error('Erro ao salvar PDF:', error.message);
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido'
+      console.error('Erro ao salvar PDF:', message);
+      return { success: false, error: message };
     }
   });
 

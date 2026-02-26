@@ -148,7 +148,7 @@ export function Header() {
                     </h1>
                 </div>
                 <div className="flex items-center gap-4 text-slate-500">
-                    <button className="p-2 hover:bg-slate-100 rounded-full transition relative">
+                    <button className="p-2 hover:bg-slate-100 rounded-full transition relative cursor-pointer">
                         <Bell className="w-5 h-5" />
                         <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
                     </button>
@@ -332,7 +332,7 @@ export function Header() {
 
             {/* Toast de confirmação — aparece no canto superior direito e some em 500 ms */}
             {showToast && (
-                <div className="fixed top-5 right-5 z-[100] flex items-center gap-2.5 bg-emerald-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg shadow-emerald-500/30 pointer-events-none">
+                <div className="fixed top-5 right-5 z-100 flex items-center gap-2.5 bg-emerald-600 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg shadow-emerald-500/30 pointer-events-none">
                     <Check className="w-4 h-4 shrink-0" />
                     Alterações salvas
                 </div>

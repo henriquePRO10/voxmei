@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import {
     DollarSign, Plus, ArrowUpRight, ArrowDownRight, Paperclip, CheckCircle2,
-    Users, ChevronDown, ChevronUp, Calendar, Filter, Edit2, Trash2
+    Users, ChevronDown, ChevronUp, Filter, Edit2, Trash2
 } from 'lucide-react';
+import { MonthPicker } from '../components/MonthPicker';
 import {
-    collection, addDoc, getDocs, query, where, Timestamp, deleteDoc, doc, updateDoc
+    collection, addDoc, getDocs, query, where, Timestamp, deleteDoc, doc, updateDoc, onSnapshot
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../services/firebaseConfig';
@@ -44,29 +45,13 @@ interface FormLancamento {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function Financeiro() {
-    const meses: { value: string; label: string }[] = [
-        { value: '01', label: 'Janeiro' },
-        { value: '02', label: 'Fevereiro' },
-        { value: '03', label: 'Março' },
-        { value: '04', label: 'Abril' },
-        { value: '05', label: 'Maio' },
-        { value: '06', label: 'Junho' },
-        { value: '07', label: 'Julho' },
-        { value: '08', label: 'Agosto' },
-        { value: '09', label: 'Setembro' },
-        { value: '10', label: 'Outubro' },
-        { value: '11', label: 'Novembro' },
-        { value: '12', label: 'Dezembro' },
-    ];
-
     // ── State ──────────────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState<TabType>('geral');
     const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
     const [clientes, setClientes] = useState<{ id: string; nomeFantasia: string }[]>([]);
     const [expandedCliente, setExpandedCliente] = useState<string | null>(null);
 
-    const [filterMes, setFilterMes] = useState('');
-    const [filterAno, setFilterAno] = useState('');
+    const [filterMesAno, setFilterMesAno] = useState(format(new Date(), 'MM/yyyy'));
     const [filterCliente, setFilterCliente] = useState('');
 
     const [isLancamentoModalOpen, setIsLancamentoModalOpen] = useState(false);
@@ -86,21 +71,6 @@ export function Financeiro() {
     const watchTipo = lancamentoForm.watch('tipo');
 
     // ── Fetch ──────────────────────────────────────────────────────────────
-    const fetchClientes = async () => {
-        if (!currentUser) return;
-        try {
-            const q = query(
-                collection(db, 'clientes'),
-                where('userId', '==', currentUser.uid),
-                where('status', '==', 'Ativo')
-            );
-            const snap = await getDocs(q);
-            const data = snap.docs.map(d => ({ id: d.id, nomeFantasia: d.data().nomeFantasia as string }));
-            data.sort((a, b) => a.nomeFantasia.localeCompare(b.nomeFantasia));
-            setClientes(data);
-        } catch (e) { console.error('Erro ao buscar clientes:', e); }
-    };
-
     const fetchLancamentos = async () => {
         if (!currentUser) return;
         try {
@@ -115,7 +85,29 @@ export function Financeiro() {
     };
 
     useEffect(() => {
-        fetchClientes();
+        if (!currentUser) {
+            setClientes([]);
+            return;
+        }
+
+        const q = query(
+            collection(db, 'clientes'),
+            where('userId', '==', currentUser.uid),
+            where('status', '==', 'Ativo')
+        );
+
+        const unsubscribe = onSnapshot(q, (snap) => {
+            const data = snap.docs.map(d => ({ id: d.id, nomeFantasia: d.data().nomeFantasia as string }));
+            data.sort((a, b) => a.nomeFantasia.localeCompare(b.nomeFantasia));
+            setClientes(data);
+        }, (e) => {
+            console.error('Erro ao escutar clientes:', e);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
+    useEffect(() => {
         fetchLancamentos();
     }, [currentUser]);
 
@@ -126,39 +118,36 @@ export function Financeiro() {
     }, []);
 
     // ── Dados computados ───────────────────────────────────────────────────
-    const anosDisponiveis = useMemo(() => {
-        const currentYear = String(new Date().getFullYear());
-        const years = new Set(lancamentos.map(l => l.data.slice(0, 4)).filter(Boolean));
-        years.add(currentYear);
-        return Array.from(years).sort((a, b) => Number(b) - Number(a));
-    }, [lancamentos]);
-
-    const periodoSelecionadoLabel = useMemo(() => {
-        const mesSelecionado = meses.find(m => m.value === filterMes)?.label;
-        if (mesSelecionado && filterAno) return `${mesSelecionado}/${filterAno}`;
-        if (mesSelecionado) return mesSelecionado;
-        if (filterAno) return filterAno;
-        return '';
-    }, [filterMes, filterAno, meses]);
+    const periodoSelecionadoLabel = filterMesAno || '';
 
     const filteredLancamentos = useMemo(() => {
         return lancamentos.filter(l => {
-            const mesMatch = filterMes ? l.data.slice(5, 7) === filterMes : true;
-            const anoMatch = filterAno ? l.data.slice(0, 4) === filterAno : true;
+            const [mes, ano] = filterMesAno ? filterMesAno.split('/') : ['', ''];
+            const mesMatch = mes ? l.data.slice(5, 7) === mes : true;
+            const anoMatch = ano ? l.data.slice(0, 4) === ano : true;
             const clienteMatch = filterCliente ? l.clienteId === filterCliente : true;
             return mesMatch && anoMatch && clienteMatch;
         });
-    }, [lancamentos, filterMes, filterAno, filterCliente]);
+    }, [lancamentos, filterMesAno, filterCliente]);
 
     const totalReceitas = filteredLancamentos.filter(l => l.tipo === 'Receita').reduce((a, b) => a + b.valor, 0);
     const totalDespesas = filteredLancamentos.filter(l => l.tipo === 'Despesa').reduce((a, b) => a + b.valor, 0);
     const saldo = totalReceitas - totalDespesas;
 
+    const clienteNomeById = useMemo(() => {
+        return new Map(clientes.map(c => [c.id, c.nomeFantasia]));
+    }, [clientes]);
+
     const lancamentosByCliente = useMemo(() => {
         const map = new Map<string, { nomeFantasia: string; receitas: number; despesas: number; items: Lancamento[] }>();
         lancamentos.forEach(l => {
             if (!map.has(l.clienteId)) {
-                map.set(l.clienteId, { nomeFantasia: l.clienteNome, receitas: 0, despesas: 0, items: [] });
+                map.set(l.clienteId, {
+                    nomeFantasia: clienteNomeById.get(l.clienteId) ?? l.clienteNome ?? 'Sem Vínculo',
+                    receitas: 0,
+                    despesas: 0,
+                    items: []
+                });
             }
             const entry = map.get(l.clienteId)!;
             entry.items.push(l);
@@ -168,7 +157,7 @@ export function Financeiro() {
         return Array.from(map.entries())
             .map(([id, v]) => ({ id, ...v }))
             .sort((a, b) => a.nomeFantasia.localeCompare(b.nomeFantasia));
-    }, [lancamentos]);
+    }, [lancamentos, clienteNomeById]);
 
     // ── Handlers: Lançamento ──────────────────────────────────────────────
     const handleCloseLancamentoModal = () => {
@@ -289,7 +278,7 @@ export function Financeiro() {
                 </div>
 
                 {/* Painel com Tabs */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
 
                     {/* Barra de tabs */}
                     <div className="flex items-center justify-between px-6 pt-4 border-b border-slate-100">
@@ -319,31 +308,14 @@ export function Financeiro() {
 
                     {/* ── Tab: Visão Geral ── */}
                     {activeTab === 'geral' && (
-                        <div>
+                        <div className="min-h-96">
                             <div className="flex flex-wrap items-center gap-3 px-6 py-3.5 bg-slate-50/60 border-b border-slate-100">
                                 <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-                                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5">
-                                    <Calendar className="w-4 h-4 text-slate-400" />
-                                    <select
-                                        value={filterMes}
-                                        onChange={e => setFilterMes(e.target.value)}
-                                        className="text-sm font-medium text-slate-700 bg-transparent outline-none cursor-pointer"
-                                    >
-                                        <option value="">Ver todos os meses</option>
-                                        {meses.map(mes => <option key={mes.value} value={mes.value}>{mes.label}</option>)}
-                                    </select>
-                                </div>
-                                <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-1.5">
-                                    <Calendar className="w-4 h-4 text-slate-400" />
-                                    <select
-                                        value={filterAno}
-                                        onChange={e => setFilterAno(e.target.value)}
-                                        className="text-sm font-medium text-slate-700 bg-transparent outline-none cursor-pointer"
-                                    >
-                                        <option value="">Ver todos os anos</option>
-                                        {anosDisponiveis.map(ano => <option key={ano} value={ano}>{ano}</option>)}
-                                    </select>
-                                </div>
+                                <MonthPicker
+                                    value={filterMesAno}
+                                    onChange={setFilterMesAno}
+                                    accent="blue"
+                                />
                                 <select
                                     value={filterCliente} onChange={e => setFilterCliente(e.target.value)}
                                     className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 outline-none cursor-pointer"
@@ -351,8 +323,8 @@ export function Financeiro() {
                                     <option value="">Todos os clientes</option>
                                     {clientes.map(c => <option key={c.id} value={c.id}>{c.nomeFantasia}</option>)}
                                 </select>
-                                {(filterMes || filterAno || filterCliente) && (
-                                    <button onClick={() => { setFilterMes(''); setFilterAno(''); setFilterCliente(''); }} className="text-xs text-blue-600 hover:underline cursor-pointer">
+                                {filterCliente && (
+                                    <button onClick={() => setFilterCliente('')} className="text-xs text-blue-600 hover:underline cursor-pointer">
                                         Limpar filtros
                                     </button>
                                 )}
