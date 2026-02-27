@@ -30,7 +30,7 @@ interface FormValues {
   dataAbertura: string
   situacaoCadastral: string
   naturezaJuridica: string
-  status: 'Ativo' | 'Pendente' | 'Inativo'
+  status: 'Ativo' | 'Pendente' | 'Inativo' | 'Baixada' | 'Inapta' | 'Suspensa' | 'Cancelada'
 }
 
 export function Clientes() {
@@ -111,8 +111,25 @@ export function Clientes() {
         if (d.founded) {
           setValue('dataAbertura', new Date(d.founded).toLocaleDateString('pt-BR'))
         }
-        setValue('situacaoCadastral', d.status?.text || '')
+        const situacao = d.status?.text || ''
+        setValue('situacaoCadastral', situacao)
         setValue('naturezaJuridica', d.company?.nature?.text || '')
+
+        // Define o Status Sistema com base na situação cadastral da Receita Federal
+        const situacaoUpper = situacao.toUpperCase()
+        if (situacaoUpper === 'ATIVA') {
+          setValue('status', 'Ativo')
+        } else if (situacaoUpper === 'BAIXADA') {
+          setValue('status', 'Baixada')
+        } else if (situacaoUpper === 'INAPTA') {
+          setValue('status', 'Inapta')
+        } else if (situacaoUpper === 'SUSPENSA') {
+          setValue('status', 'Suspensa')
+        } else if (situacaoUpper === 'CANCELADA') {
+          setValue('status', 'Cancelada')
+        } else if (situacaoUpper) {
+          setValue('status', 'Pendente')
+        }
       } else {
         alert(result.error || 'Erro ao buscar CNPJ.')
       }
@@ -298,7 +315,9 @@ export function Clientes() {
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
                             : cliente.status === 'Pendente'
                               ? 'bg-amber-50 text-amber-600 border-amber-200'
-                              : 'bg-rose-50 text-rose-600 border-rose-200'
+                              : cliente.status === 'Suspensa'
+                                ? 'bg-orange-50 text-orange-600 border-orange-200'
+                                : 'bg-rose-50 text-rose-600 border-rose-200'
                         }`}
                       >
                         SISTEMA: {cliente.status}
@@ -416,6 +435,10 @@ export function Clientes() {
                     <option value="Ativo">🟢 Ativo</option>
                     <option value="Pendente">🟡 Pendente</option>
                     <option value="Inativo">🔴 Inativo</option>
+                    <option value="Baixada">🔴 Baixada</option>
+                    <option value="Inapta">🔴 Inapta</option>
+                    <option value="Suspensa">🟠 Suspensa</option>
+                    <option value="Cancelada">🔴 Cancelada</option>
                   </select>
                 </div>
 

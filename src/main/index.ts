@@ -5,10 +5,16 @@ import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import axios from 'axios'
 import fs from 'fs'
-import * as dotenv from 'dotenv'
 
-// Carrega as variáveis de ambiente do .env
-dotenv.config()
+// Em modo dev, usa diretório temporário dedicado para evitar erros de permissão
+// de cache do Chromium no Windows
+if (is.dev) {
+  app.setPath('userData', join(app.getPath('temp'), 'voxmei-dev-userdata'))
+}
+
+// Suprime erros de cache de GPU e disco do Chromium
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
+app.commandLine.appendSwitch('disable-features', 'NetworkServiceInProcess')
 
 function createWindow(): void {
   // Create the browser window.
@@ -51,14 +57,16 @@ app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.voxcount.app')
 
-  // Configura e inicia o auto-updater
-  autoUpdater.on('update-available', () => {
-    console.log('Atualização disponível.')
-  })
-  autoUpdater.on('update-downloaded', () => {
-    console.log('Atualização baixada. O aplicativo será atualizado ao reiniciar.')
-  })
-  autoUpdater.checkForUpdatesAndNotify()
+  // Configura e inicia o auto-updater (apenas em produção)
+  if (!is.dev) {
+    autoUpdater.on('update-available', () => {
+      console.log('Atualização disponível.')
+    })
+    autoUpdater.on('update-downloaded', () => {
+      console.log('Atualização baixada. O aplicativo será atualizado ao reiniciar.')
+    })
+    autoUpdater.checkForUpdatesAndNotify()
+  }
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.

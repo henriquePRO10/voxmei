@@ -6,7 +6,7 @@ export interface Cliente {
   cnpj: string
   razaoSocial: string
   nomeFantasia: string
-  status: 'Ativo' | 'Pendente' | 'Inativo'
+  status: 'Ativo' | 'Pendente' | 'Inativo' | 'Baixada' | 'Inapta' | 'Suspensa' | 'Cancelada'
   telefone: string
   email?: string
   atividadePrincipal?: string
