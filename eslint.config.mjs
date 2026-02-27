@@ -25,7 +25,26 @@ export default defineConfig(
     },
     rules: {
       ...eslintPluginReactHooks.configs.recommended.rules,
-      ...eslintPluginReactRefresh.configs.vite.rules
+      ...eslintPluginReactRefresh.configs.vite.rules,
+      // React components e callbacks inline têm tipos inferidos pelo TS.
+      // Manter a regra apenas para arquivos .ts puros (utilitários, hooks).
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }]
+    }
+  },
+  {
+    // Reativa a regra somente para arquivos utilitários (não-React)
+    files: ['**/*.ts'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': [
+        'error',
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
+          allowDirectConstAssertionInArrowFunctions: true
+        }
+      ]
     }
   },
   eslintConfigPrettier

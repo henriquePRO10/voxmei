@@ -154,7 +154,10 @@ export function MonthPicker({
             <button
               type="button"
               onClick={() => setViewYear((y) => y - 1)}
-              className={cn('p-1 rounded-md text-slate-400 transition-colors cursor-pointer', arrowHover)}
+              className={cn(
+                'p-1 rounded-md text-slate-400 transition-colors cursor-pointer',
+                arrowHover
+              )}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -162,7 +165,10 @@ export function MonthPicker({
             <button
               type="button"
               onClick={() => setViewYear((y) => y + 1)}
-              className={cn('p-1 rounded-md text-slate-400 transition-colors cursor-pointer', arrowHover)}
+              className={cn(
+                'p-1 rounded-md text-slate-400 transition-colors cursor-pointer',
+                arrowHover
+              )}
             >
               <ChevronRight className="w-4 h-4" />
             </button>

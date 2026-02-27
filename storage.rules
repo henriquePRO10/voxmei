@@ -2,12 +2,22 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Apenas o usuário dono do ID especificado na pasta pode ler ou gravar ali.
-    match /notas_fiscais/{userId}/{fileName=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
+
+    // Diretriz: anexos de NF só podem ser lidos/criados/removidos pelo próprio usuário.
+    // Isso permite substituir anexos (apaga o antigo) e remover ao desmarcar "possui NF".
+    match /notas_fiscais/{userId}/{fileName=**} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
     match /assinaturas/{userId}/{fileName=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
   }
 }

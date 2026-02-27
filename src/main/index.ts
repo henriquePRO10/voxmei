@@ -72,80 +72,127 @@ app.whenReady().then(() => {
 
   // [1] Busca Segura no CNPJA (com fallback para token secundário)
   ipcMain.handle('fetch-cnpj', async (_, cnpj: string) => {
-    const cleanCnpj = cnpj.replace(/\D/g, '');
-    const url = `https://api.cnpja.com/office/${cleanCnpj}`;
+    const cleanCnpj = cnpj.replace(/\D/g, '')
+    const url = `https://api.cnpja.com/office/${cleanCnpj}`
 
-    const tryFetch = async (token: string): Promise<{ success: true; data: unknown } | { success: false; error: string }> => {
+    const tryFetch = async (
+      token: string
+    ): Promise<{ success: true; data: unknown } | { success: false; error: string }> => {
       const response = await axios.get(url, {
         headers: { Authorization: token },
         validateStatus: () => true // não lança exceção em nenhum status HTTP
-      });
+      })
 
       if (response.status >= 200 && response.status < 300) {
-        return { success: true, data: response.data };
+        return { success: true, data: response.data }
       }
 
       // Retorna o status para que o caller decida se tenta o fallback
-      return { success: false, error: `HTTP ${response.status}: ${JSON.stringify(response.data)}` };
-    };
+      return { success: false, error: `HTTP ${response.status}: ${JSON.stringify(response.data)}` }
+    }
 
-    const token1 = process.env.CNPJA_API_TOKEN;
-    const token2 = process.env.CNPJA_API_TOKEN2;
+    const token1 = process.env.CNPJA_API_TOKEN
+    const token2 = process.env.CNPJA_API_TOKEN2
 
     if (!token1 && !token2) {
-      return { success: false, error: 'Nenhum token da API CNPJA configurado no ambiente.' };
+      return { success: false, error: 'Nenhum token da API CNPJA configurado no ambiente.' }
     }
 
     // Tentativa 1 — token principal
     if (token1) {
       try {
-        const result = await tryFetch(token1);
-        if (result.success) return result;
-        console.warn(`[CNPJA] Token principal falhou (${result.error}). Tentando token secundário...`);
+        const result = await tryFetch(token1)
+        if (result.success) return result
+        console.warn(
+          `[CNPJA] Token principal falhou (${result.error}). Tentando token secundário...`
+        )
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-        console.warn(`[CNPJA] Token principal lançou exceção: ${msg}. Tentando token secundário...`);
+        const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+        console.warn(`[CNPJA] Token principal lançou exceção: ${msg}. Tentando token secundário...`)
       }
     }
 
     // Tentativa 2 — token de contingência
     if (token2) {
       try {
-        const result = await tryFetch(token2);
-        if (result.success) return result;
-        console.error(`[CNPJA] Token secundário também falhou: ${result.error}`);
-        return { success: false, error: 'Ambos os tokens CNPJA falharam. Verifique seus limites de requisição.' };
+        const result = await tryFetch(token2)
+        if (result.success) return result
+        console.error(`[CNPJA] Token secundário também falhou: ${result.error}`)
+        return {
+          success: false,
+          error: 'Ambos os tokens CNPJA falharam. Verifique seus limites de requisição.'
+        }
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Erro desconhecido';
-        console.error(`[CNPJA] Token secundário lançou exceção: ${msg}`);
-        return { success: false, error: msg };
+        const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+        console.error(`[CNPJA] Token secundário lançou exceção: ${msg}`)
+        return { success: false, error: msg }
       }
     }
 
-    return { success: false, error: 'Token principal falhou e token secundário não está configurado.' };
-  });
+    return {
+      success: false,
+      error: 'Token principal falhou e token secundário não está configurado.'
+    }
+  })
 
   // [2] Rotina Segura para Salvar Arquivos no SO
-  ipcMain.handle('save-pdf', async (_, { buffer, defaultPath }: { buffer: Uint8Array, defaultPath: string }) => {
+  ipcMain.handle(
+    'save-pdf',
+    async (_, { buffer, defaultPath }: { buffer: Uint8Array; defaultPath: string }) => {
+      try {
+        const { canceled, filePath } = await dialog.showSaveDialog({
+          title: 'Baixar Holerite',
+          defaultPath: defaultPath || 'Holerite.pdf',
+          filters: [{ name: 'Documento PDF', extensions: ['pdf'] }]
+        })
+
+        if (canceled || !filePath) return { success: false, canceled: true }
+
+        fs.writeFileSync(filePath, Buffer.from(buffer))
+        // Abre o PDF no navegador padrão do sistema
+        shell.openExternal(`file://${filePath}`)
+        return { success: true, filePath }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Erro desconhecido'
+        console.error('Erro ao salvar PDF:', message)
+        return { success: false, error: message }
+      }
+    }
+  )
+
+  // [3] Selecionar pasta para download em lote
+  ipcMain.handle('select-folder', async () => {
     try {
-      const { canceled, filePath } = await dialog.showSaveDialog({
-        title: 'Baixar Holerite',
-        defaultPath: defaultPath || 'Holerite.pdf',
-        filters: [{ name: 'Documento PDF', extensions: ['pdf'] }]
-      });
-
-      if (canceled || !filePath) return { success: false, canceled: true };
-
-      fs.writeFileSync(filePath, Buffer.from(buffer));
-      // Abre o PDF no navegador padrão do sistema
-      shell.openExternal(`file://${filePath}`);
-      return { success: true, filePath };
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        title: 'Escolha a pasta de destino dos relatórios',
+        properties: ['openDirectory', 'createDirectory']
+      })
+      if (canceled || filePaths.length === 0) return { success: false, canceled: true }
+      return { success: true, folderPath: filePaths[0] }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido'
-      console.error('Erro ao salvar PDF:', message);
-      return { success: false, error: message };
+      return { success: false, error: message }
     }
-  });
+  })
+
+  // [4] Salvar PDF diretamente em uma pasta (sem diálogo por arquivo)
+  ipcMain.handle(
+    'save-pdf-to-folder',
+    async (
+      _,
+      { buffer, fileName, folderPath }: { buffer: Uint8Array; fileName: string; folderPath: string }
+    ) => {
+      try {
+        const filePath = `${folderPath}/${fileName}`
+        fs.writeFileSync(filePath, Buffer.from(buffer))
+        return { success: true, filePath }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Erro desconhecido'
+        console.error('Erro ao salvar PDF em lote:', message)
+        return { success: false, error: message }
+      }
+    }
+  )
 
   createWindow()
 

@@ -4,7 +4,11 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Custom APIs for renderer
 const api = {
   fetchCnpj: (cnpj: string) => ipcRenderer.invoke('fetch-cnpj', cnpj),
-  savePdf: (buffer: Uint8Array, defaultPath: string) => ipcRenderer.invoke('save-pdf', { buffer, defaultPath })
+  savePdf: (buffer: Uint8Array, defaultPath: string) =>
+    ipcRenderer.invoke('save-pdf', { buffer, defaultPath }),
+  selectFolder: () => ipcRenderer.invoke('select-folder'),
+  savePdfToFolder: (buffer: Uint8Array, fileName: string, folderPath: string) =>
+    ipcRenderer.invoke('save-pdf-to-folder', { buffer, fileName, folderPath })
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
