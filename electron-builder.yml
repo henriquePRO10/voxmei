@@ -14,6 +14,9 @@ asarUnpack:
   - resources/**
 win:
   executableName: VoxCount
+  # don't try to sign the executable (avoids winCodeSign cache errors when you
+  # are building on Windows without a certificate)
+  forceCodeSigning: false
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
