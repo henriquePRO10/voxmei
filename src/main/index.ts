@@ -59,12 +59,30 @@ app.whenReady().then(() => {
 
   // Configura e inicia o auto-updater (apenas em produção)
   if (!is.dev) {
+    // Configura o feed do GitHub
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'henriquePRO10',
+      repo: 'voxmei'
+    })
+
     autoUpdater.on('update-available', () => {
-      console.log('Atualização disponível.')
+      console.log('✅ Atualização disponível.')
     })
+
+    autoUpdater.on('update-not-available', () => {
+      console.log('✅ Nenhuma atualização disponível.')
+    })
+
     autoUpdater.on('update-downloaded', () => {
-      console.log('Atualização baixada. O aplicativo será atualizado ao reiniciar.')
+      console.log('✅ Atualização baixada. O aplicativo será atualizado ao reiniciar.')
     })
+
+    autoUpdater.on('error', (error) => {
+      console.error('❌ Erro ao verificar atualizações:', error.message)
+    })
+
+    console.log('🔍 Iniciando verificação de atualizações...')
     autoUpdater.checkForUpdatesAndNotify()
   }
 
@@ -77,6 +95,9 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  // Versão do app
+  ipcMain.handle('get-app-version', () => app.getVersion())
 
   // [1] Busca Segura no CNPJA (com fallback para token secundário)
   ipcMain.handle('fetch-cnpj', async (_, cnpj: string) => {

@@ -1,6 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 
 interface CustomAPI {
+  getAppVersion: () => Promise<string>
   fetchCnpj: (cnpj: string) => Promise<{ success: boolean; data?: unknown; error?: string }>
   savePdf: (
     buffer: Uint8Array,

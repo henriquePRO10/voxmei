@@ -3,6 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
 const api = {
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('get-app-version'),
   fetchCnpj: (cnpj: string) => ipcRenderer.invoke('fetch-cnpj', cnpj),
   savePdf: (buffer: Uint8Array, defaultPath: string) =>
     ipcRenderer.invoke('save-pdf', { buffer, defaultPath }),

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LogIn, Lock, Mail, Loader2, Check, X, UserPlus } from 'lucide-react'
 import {
   signInWithEmailAndPassword,
@@ -22,6 +22,11 @@ interface LoginForm {
 
 export function Login() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
+  const [appVersion, setAppVersion] = useState('')
+
+  useEffect(() => {
+    window.api.getAppVersion().then(setAppVersion)
+  }, [])
 
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -456,6 +461,12 @@ export function Login() {
 
         </div>
       </div>
+
+      {appVersion && (
+        <p className="mt-4 text-center text-xs text-slate-400 relative z-10">
+          v{appVersion}
+        </p>
+      )}
 
       {/* Decorative Blob & Background Logo */}
       <div className="fixed top-0 max-w-7xl mx-auto inset-x-0 h-full w-full overflow-hidden pointer-events-none z-0 flex items-center justify-center">

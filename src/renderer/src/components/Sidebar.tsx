@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { Users, DollarSign, FileText, FileBadge, BarChart2, Mail } from 'lucide-react'
 import { cn } from '../lib/utils'
 import iconLogo from '../../../../resources/icon.png'
@@ -18,6 +19,12 @@ function WhatsappIcon({ className }: { className?: string }) {
 }
 
 export function Sidebar() {
+  const [appVersion, setAppVersion] = useState('')
+
+  useEffect(() => {
+    window.api.getAppVersion().then(setAppVersion)
+  }, [])
+
   const routes = [
     { label: 'Gestão de Clientes', path: '/', icon: Users },
     { label: 'Financeiro', path: '/financeiro', icon: DollarSign },
@@ -70,7 +77,7 @@ export function Sidebar() {
         </a>
       </div>
       <div className="p-4 text-xs text-slate-500 border-t border-slate-800 text-center">
-        Versão 1.0.0
+        {appVersion ? `Versão ${appVersion}` : ''}
       </div>
     </aside>
   )
