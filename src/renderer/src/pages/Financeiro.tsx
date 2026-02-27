@@ -371,61 +371,61 @@ export function Financeiro() {
 
         {/* Painel com Tabs */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100">
-          {/* Barra de tabs + filtros inline */}
-          <div className="flex items-center justify-between px-4 pt-3 border-b border-slate-100 gap-3 flex-wrap">
-            <div className="flex gap-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-colors -mb-px cursor-pointer ${
-                    activeTab === tab.id
-                      ? 'border-blue-600 text-blue-600 bg-blue-50/50'
-                      : 'border-transparent text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </button>
+          {/* Linha de tabs */}
+          <div className="flex items-center px-4 pt-3 border-b border-slate-100">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-colors -mb-px cursor-pointer ${
+                  activeTab === tab.id
+                    ? 'border-blue-600 text-blue-600 bg-blue-50/50'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {/* Linha de filtros */}
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-100 bg-slate-50/50">
+            <select
+              value={filterCliente}
+              onChange={(e) => setFilterCliente(e.target.value)}
+              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 outline-none cursor-pointer"
+            >
+              <option value="">Todos os clientes</option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nomeFantasia}
+                </option>
               ))}
-            </div>
-            {/* Filtros + Ações */}
-            <div className="flex items-center gap-2 pb-3 flex-wrap">
-              <select
-                value={filterCliente}
-                onChange={(e) => setFilterCliente(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 outline-none cursor-pointer"
+            </select>
+            <select
+              value={filterTipo}
+              onChange={(e) => setFilterTipo(e.target.value as '' | 'Receita' | 'Despesa')}
+              className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 outline-none cursor-pointer"
+            >
+              <option value="">Todos os tipos</option>
+              <option value="Receita">↑ Receitas</option>
+              <option value="Despesa">↓ Despesas</option>
+            </select>
+            {(filterCliente || filterTipo) && (
+              <button
+                onClick={() => {
+                  setFilterCliente('')
+                  setFilterTipo('')
+                }}
+                className="text-xs text-blue-600 hover:underline cursor-pointer"
               >
-                <option value="">Todos os clientes</option>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nomeFantasia}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filterTipo}
-                onChange={(e) => setFilterTipo(e.target.value as '' | 'Receita' | 'Despesa')}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 outline-none cursor-pointer"
-              >
-                <option value="">Todos os tipos</option>
-                <option value="Receita">↑ Receitas</option>
-                <option value="Despesa">↓ Despesas</option>
-              </select>
-              {(filterCliente || filterTipo) && (
-                <button
-                  onClick={() => {
-                    setFilterCliente('')
-                    setFilterTipo('')
-                  }}
-                  className="text-xs text-blue-600 hover:underline cursor-pointer"
-                >
-                  Limpar
-                </button>
-              )}              
-              <span className="text-xs text-slate-400 px-1">
-                {filteredLancamentos.length} reg.
-              </span>
+                Limpar
+              </button>
+            )}
+            <span className="text-xs text-slate-400 ml-1">
+              {filteredLancamentos.length} reg.
+            </span>
+            <div className="ml-auto">
               <button
                 onClick={() => setIsLancamentoModalOpen(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-medium shadow-sm shadow-blue-500/30 transition flex items-center gap-2 text-sm cursor-pointer"
@@ -472,8 +472,10 @@ export function Financeiro() {
                           <td className="px-6 py-3.5 whitespace-nowrap text-slate-500">
                             {format(new Date(item.data + 'T12:00:00'), 'dd/MM/yyyy')}
                           </td>
-                          <td className="px-6 py-3.5 font-medium text-slate-800">
-                            {item.descricao}
+                          <td className="px-6 py-3.5 font-medium text-slate-800 max-w-xs">
+                            <span className="block truncate" title={item.descricao}>
+                              {item.descricao}
+                            </span>
                           </td>
                           <td className="px-6 py-3.5">
                             <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-xs font-medium">
@@ -643,8 +645,10 @@ export function Financeiro() {
                                     <td className="px-8 py-2.5 text-slate-400 whitespace-nowrap">
                                       {format(new Date(item.data + 'T12:00:00'), 'dd/MM/yyyy')}
                                     </td>
-                                    <td className="px-6 py-2.5 font-medium text-slate-700">
-                                      {item.descricao}
+                                    <td className="px-6 py-2.5 font-medium text-slate-700 max-w-xs">
+                                      <span className="block truncate" title={item.descricao}>
+                                        {item.descricao}
+                                      </span>
                                     </td>
                                     <td className="px-6 py-2.5">
                                       <span
@@ -790,10 +794,14 @@ export function Financeiro() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Descrição</label>
                 <input
-                  {...lancamentoForm.register('descricao', { required: true })}
+                  {...lancamentoForm.register('descricao', { required: true, maxLength: 35 })}
+                  maxLength={35}
                   placeholder="Ex: Pagamento de Honorários"
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition"
                 />
+                <p className="text-xs text-slate-400 text-right mt-1">
+                  {(lancamentoForm.watch('descricao') ?? '').length}/35
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
