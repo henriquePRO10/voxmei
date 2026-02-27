@@ -1,6 +1,6 @@
 {
   "name": "voxcount",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Cliente desktop para o serviço VoxBit Soluções",
   "main": "./out/main/index.js",
   "author": "VoxBit Soluções",
