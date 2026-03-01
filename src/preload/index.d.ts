@@ -18,6 +18,11 @@ interface CustomAPI {
     fileName: string,
     folderPath: string
   ) => Promise<{ success: boolean; filePath?: string; error?: string }>
+  // Updater
+  onUpdateAvailable: (callback: (payload: { version: string }) => void) => void
+  onUpdateDownloaded: (callback: (payload: { version: string }) => void) => void
+  getUpdateStatus: () => Promise<{ available: boolean; downloaded: boolean; version: string | null }>
+  installUpdate: () => Promise<void>
 }
 
 declare global {

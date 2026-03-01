@@ -9,7 +9,15 @@ const api = {
     ipcRenderer.invoke('save-pdf', { buffer, defaultPath }),
   selectFolder: () => ipcRenderer.invoke('select-folder'),
   savePdfToFolder: (buffer: Uint8Array, fileName: string, folderPath: string) =>
-    ipcRenderer.invoke('save-pdf-to-folder', { buffer, fileName, folderPath })
+    ipcRenderer.invoke('save-pdf-to-folder', { buffer, fileName, folderPath }),
+  // Updater
+  onUpdateAvailable: (callback: (payload: { version: string }) => void) =>
+    ipcRenderer.on('updater:update-available', (_event, payload) => callback(payload)),
+  onUpdateDownloaded: (callback: (payload: { version: string }) => void) =>
+    ipcRenderer.on('updater:update-downloaded', (_event, payload) => callback(payload)),
+  getUpdateStatus: (): Promise<{ available: boolean; downloaded: boolean; version: string | null }> =>
+    ipcRenderer.invoke('updater:get-status'),
+  installUpdate: (): Promise<void> => ipcRenderer.invoke('updater:install')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
