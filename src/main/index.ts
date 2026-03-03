@@ -6,6 +6,16 @@ import icon from '../../resources/icon.png?asset'
 import axios from 'axios'
 import fs from 'fs'
 
+// Referência global para enviar eventos do main → renderer
+let mainWindow: BrowserWindow | null = null
+
+// Estado persistente da atualização — consultado pelo renderer ao montar
+const updateStatus = {
+  available: false,
+  downloaded: false,
+  version: null as string | null
+}
+
 // Em modo dev, usa diretório temporário dedicado para evitar erros de permissão
 // de cache do Chromium no Windows
 if (is.dev) {
@@ -18,7 +28,7 @@ app.commandLine.appendSwitch('disable-features', 'NetworkServiceInProcess')
 
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     show: false,
@@ -33,7 +43,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow?.show()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -66,16 +76,23 @@ app.whenReady().then(() => {
       repo: 'voxmei'
     })
 
-    autoUpdater.on('update-available', () => {
-      console.log('✅ Atualização disponível.')
+    autoUpdater.on('update-available', (info) => {
+      console.log('✅ Atualização disponível:', info.version)
+      updateStatus.available = true
+      updateStatus.version = info.version
+      mainWindow?.webContents.send('updater:update-available', { version: info.version })
     })
 
     autoUpdater.on('update-not-available', () => {
       console.log('✅ Nenhuma atualização disponível.')
     })
 
-    autoUpdater.on('update-downloaded', () => {
+    autoUpdater.on('update-downloaded', (info) => {
       console.log('✅ Atualização baixada. O aplicativo será atualizado ao reiniciar.')
+      updateStatus.available = true
+      updateStatus.downloaded = true
+      updateStatus.version = info.version
+      mainWindow?.webContents.send('updater:update-downloaded', { version: info.version })
     })
 
     autoUpdater.on('error', (error) => {
@@ -98,6 +115,14 @@ app.whenReady().then(() => {
 
   // Versão do app
   ipcMain.handle('get-app-version', () => app.getVersion())
+
+  // Retorna o estado atual da atualização (usado pelo renderer ao montar)
+  ipcMain.handle('updater:get-status', () => updateStatus)
+
+  // Instala a atualização baixada e reinicia o app
+  ipcMain.handle('updater:install', () => {
+    autoUpdater.quitAndInstall()
+  })
 
   // [1] Busca Segura no CNPJA (com fallback para token secundário)
   ipcMain.handle('fetch-cnpj', async (_, cnpj: string) => {
