@@ -18,6 +18,8 @@ import { format, subMonths, startOfMonth, parse } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useAuth } from '../contexts/useAuth'
 import { type Cliente } from '../types'
+import { platform } from '../lib/platformService'
+import { isWeb } from '../lib/environment'
 
 /* ─── tipos locais ──────────────────────────────────────────── */
 
@@ -132,10 +134,14 @@ export function Relatorios() {
     if (selectedClientes.size === 0 || !currentUser) return
     const clientesToProcess = clientes.filter((c) => selectedClientes.has(c.id))
 
-    // Selecionar pasta de destino uma única vez
-    const folderResult = await window.api.selectFolder()
-    if (!folderResult.success || !folderResult.folderPath) return
-    const folderPath = folderResult.folderPath
+    // Na web: gerar todos os PDFs em memoria e mergear num unico download
+    // No Electron: selecionar pasta e salvar arquivos individuais
+    let folderPath: string | undefined
+    if (!isWeb()) {
+      const folderResult = await platform.selectFolder()
+      if (!folderResult.success || !folderResult.folderPath) return
+      folderPath = folderResult.folderPath
+    }
 
     setGerandoLote(true)
     setLoteProgress({ done: 0, total: clientesToProcess.length })
@@ -175,8 +181,9 @@ export function Relatorios() {
   const gerarPdf = async (
     cliente: Cliente,
     meses: { mesAno: string; label: string }[],
-    folderPath?: string
-  ): Promise<void> => {
+    folderPath?: string,
+    returnBytesOnly?: boolean
+  ): Promise<Uint8Array | void> => {
     if (!currentUser || meses.length === 0) return
     try {
       // 1. Buscar dados de faturamento
@@ -491,7 +498,16 @@ export function Relatorios() {
 
       if (perfil?.assinaturaUrl) {
         try {
-          const imgRes = await fetch(perfil.assinaturaUrl)
+          // Na web, usa proxy para evitar CORS do Firebase Storage
+          // No Electron, fetch direto funciona (sem restrição CORS)
+          let imgUrl = perfil.assinaturaUrl
+          if (isWeb()) {
+            imgUrl = perfil.assinaturaUrl.replace(
+              'https://firebasestorage.googleapis.com',
+              '/storage-proxy'
+            )
+          }
+          const imgRes = await fetch(imgUrl)
           if (!imgRes.ok) throw new Error(`HTTP ${imgRes.status}`)
           const imgBuf = await imgRes.arrayBuffer()
           // Tenta embutir como PNG primeiro; se falhar, tenta JPG
@@ -557,6 +573,10 @@ export function Relatorios() {
 
       /* ── Salvar ── */
       const pdfBytes = await pdfDoc.save()
+
+      // Se solicitado, retorna bytes sem salvar (usado no merge de lote web)
+      if (returnBytesOnly) return pdfBytes
+
       const competenciaInicio = rows[0]?.mesAno ?? ''
       const competenciaFim = rows[rows.length - 1]?.mesAno ?? ''
       const competencia =
@@ -570,10 +590,10 @@ export function Relatorios() {
       )
       const defaultPath = `Relatorio_Faturamento_${nomeClienteArquivo}_Competencia_${sanitizeFilePart(competencia)}.pdf`
       if (folderPath) {
-        const result = await window.api.savePdfToFolder(pdfBytes, defaultPath, folderPath)
+        const result = await platform.savePdfToFolder(pdfBytes, defaultPath, folderPath)
         if (!result.success) console.error('Erro ao salvar PDF:', result.error)
       } else {
-        const result = await window.api.savePdf(pdfBytes, defaultPath)
+        const result = await platform.savePdf(pdfBytes, defaultPath)
         if (!result.success && !result.canceled) console.error('Erro ao salvar PDF:', result.error)
       }
     } catch (err: unknown) {
@@ -585,8 +605,9 @@ export function Relatorios() {
   const gerarRelatorioReceitas = async (
     cliente: Cliente,
     mesRef: string,
-    folderPath?: string
-  ): Promise<void> => {
+    folderPath?: string,
+    returnBytesOnly?: boolean
+  ): Promise<Uint8Array | void> => {
     if (!currentUser) return
     try {
       const [mm, yyyy] = mesRef.split('/')
@@ -943,15 +964,19 @@ export function Relatorios() {
 
       // Salvar arquivo
       const pdfBytes = await pdfDoc.save()
+
+      // Se solicitado, retorna bytes sem salvar (usado no merge de lote web)
+      if (returnBytesOnly) return pdfBytes
+
       const nomeClienteArquivo = sanitizeFilePart(
         cliente.nomeFantasia || cliente.razaoSocial || 'cliente'
       )
       const nomeArq = `Relatorio_ReceitasBrutas_${nomeClienteArquivo}_Competencia_${sanitizeFilePart(mesAnoKey)}.pdf`
       if (folderPath) {
-        const result = await window.api.savePdfToFolder(pdfBytes, nomeArq, folderPath)
+        const result = await platform.savePdfToFolder(pdfBytes, nomeArq, folderPath)
         if (!result.success) console.error('Erro ao salvar PDF:', result.error)
       } else {
-        const result = await window.api.savePdf(pdfBytes, nomeArq)
+        const result = await platform.savePdf(pdfBytes, nomeArq)
         if (!result.success && !result.canceled) console.error('Erro ao salvar PDF:', result.error)
       }
     } catch (err) {

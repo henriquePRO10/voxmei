@@ -15,6 +15,7 @@ import { db } from '../services/firebaseConfig'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../contexts/useAuth'
 import { formatCnpj, snapshotTo } from '../lib/utils'
+import { platform } from '../lib/platformService'
 import { useOutsideClick } from '../hooks/useOutsideClick'
 import { type Cliente, type CnpjApiResult } from '../types'
 
@@ -76,7 +77,7 @@ export function Clientes() {
 
     setIsFetchingCnpj(true)
     try {
-      const result = await window.api.fetchCnpj(cnpj)
+      const result = await platform.fetchCnpj(cnpj)
       if (result.success && result.data) {
         const d = result.data as CnpjApiResult
         setValue('razaoSocial', d.company?.name || '')

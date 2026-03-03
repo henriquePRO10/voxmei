@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { Users, DollarSign, FileText, FileBadge, BarChart2, Mail } from 'lucide-react'
 import { cn } from '../lib/utils'
+import { platform } from '../lib/platformService'
 import iconLogo from '../../../../resources/icon.png'
 
 // whatsapp SVG since lucide-react doesn't include it
@@ -22,7 +23,7 @@ export function Sidebar() {
   const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
-    window.api.getAppVersion().then(setAppVersion)
+    platform.getAppVersion().then(setAppVersion)
   }, [])
 
   const routes = [

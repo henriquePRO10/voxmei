@@ -12,6 +12,7 @@ import {
 import { FirebaseError } from 'firebase/app'
 import { auth } from '../services/firebaseConfig'
 import { useForm } from 'react-hook-form'
+import { platform } from '../lib/platformService'
 import iconLogo from '../../../../resources/icon.png'
 
 interface LoginForm {
@@ -25,7 +26,7 @@ export function Login() {
   const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
-    window.api.getAppVersion().then(setAppVersion)
+    platform.getAppVersion().then(setAppVersion)
   }, [])
 
   const [loading, setLoading] = useState(false)

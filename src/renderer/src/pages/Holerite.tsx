@@ -26,6 +26,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib'
 import { format } from 'date-fns'
 import { useAuth } from '../contexts/useAuth'
 import { cn, snapshotTo } from '../lib/utils'
+import { platform } from '../lib/platformService'
 
 interface ProLabore {
   id: string
@@ -311,7 +312,7 @@ export function Holerite() {
       if (!pdfBytes) throw new Error('Falha ao gerar bytes do PDF')
 
       const fileName = `Holerite_${item.nomeFantasia.replace(/[^a-z0-9]/gi, '_')}_${item.mesAno.replace('/', '-')}.pdf`
-      const result = await window.api.savePdf(pdfBytes, fileName)
+      const result = await platform.savePdf(pdfBytes, fileName)
 
       if (result.success) {
         // Sucesso silencioso ou toast
@@ -348,7 +349,7 @@ export function Holerite() {
       const mergedPdfBytes = await mergedPdf.save()
       const fileName = `Holerites_Lote_${filterMonth.replace('/', '-')}.pdf`
 
-      const result = await window.api.savePdf(mergedPdfBytes, fileName)
+      const result = await platform.savePdf(mergedPdfBytes, fileName)
 
       if (result.success) {
         setSelectedItems(new Set()) // Limpa seleção após sucesso

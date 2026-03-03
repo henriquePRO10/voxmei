@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 
 import tailwindcss from '@tailwindcss/vite'
+import pkg from './package.json'
 
 export default defineConfig(({ mode }) => {
   // Carrega variáveis do .env com prefixo CNPJA_ para injetar no processo main
@@ -22,6 +23,9 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@renderer': resolve('src/renderer/src')
         }
+      },
+      define: {
+        __APP_VERSION__: JSON.stringify(pkg.version)
       },
       plugins: [react(), tailwindcss()]
     }

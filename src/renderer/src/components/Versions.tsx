@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { platform } from '../lib/platformService'
 
 function Versions(): React.JSX.Element {
-  const [versions] = useState(window.electron.process.versions)
+  const [versions] = useState(platform.getElectronVersions())
 
   return (
     <ul className="versions">
