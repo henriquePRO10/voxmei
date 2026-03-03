@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isElectron } from '../lib/environment'
 
 interface AppUpdateState {
   updateAvailable: boolean
@@ -13,6 +14,9 @@ export function useAppUpdate(): AppUpdateState {
   const [version, setVersion] = useState<string | null>(null)
 
   useEffect(() => {
+    // Funcionalidade de atualização só existe no Electron
+    if (!isElectron()) return
+
     // Consulta o estado atual ao montar — cobre o caso em que os eventos
     // dispararam antes do renderer terminar de carregar
     window.api.getUpdateStatus().then((status) => {
@@ -38,6 +42,7 @@ export function useAppUpdate(): AppUpdateState {
   }, [])
 
   const installUpdate = async () => {
+    if (!isElectron()) return
     await window.api.installUpdate()
   }
 
