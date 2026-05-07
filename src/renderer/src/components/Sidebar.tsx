@@ -61,7 +61,7 @@ export function Sidebar() {
       </nav>
       <div className="mt-auto px-6 py-4 text-sm text-slate-300 space-y-2">
         <a
-          href="https://api.whatsapp.com/send?phone=556696067576"
+          href="https://api.whatsapp.com/send?phone=5566999366419"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 hover:text-white transition-colors"
